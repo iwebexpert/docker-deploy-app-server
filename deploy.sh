@@ -29,6 +29,17 @@ if [ -z "$APP_NAME" ]; then
   exit 1
 fi
 
+# Check if Docker is running in swarm mode
+SWARM_STATUS=$(docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null || echo "inactive")
+
+if [ "$SWARM_STATUS" != "active" ]; then
+  echo "This node is not a swarm manager."
+  echo "Initializing Docker Swarm..."
+  docker swarm init
+else
+  echo "Docker Swarm is already initialized."
+fi
+
 # Deploy the stack using docker stack deploy
 echo "Deploying ${APP_NAME} with image tag ${IMAGE_TAG} using ${SCRIPT_DIR}/docker-compose.yml..."
 
@@ -49,6 +60,6 @@ if [ -n "$APP_EXTERNAL_PORT" ]; then
     export APP_EXTERNAL_PORT
 fi
 
-docker stack deploy -c "${SCRIPT_DIR}/docker-compose.yml" "${APP_NAME}"
+docker stack deploy --with-registry-auth -c "${SCRIPT_DIR}/docker-compose.yml" "${APP_NAME}"
 
 echo "Deployment complete."
