@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  app:
+    image: "${DOCKER_IMAGE}:${IMAGE_TAG:-latest}"
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "${APP_EXTERNAL_PORT:-3000}:${APP_INTERNAL_PORT:-3000}"
+    environment:
+      - NODE_ENV=production
+    logging:
+      driver: "json-file" # Configure logging driver, useful for debugging
+      options:
+        max-size: "10m" # Limit the size of the log file
+        max-file: "3" # Keep only the last 3 log files
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_INTERNAL_PORT:-3000}"] # Healthcheck to ensure the app is running
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s # Wait 40 seconds before starting health checks
