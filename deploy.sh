@@ -29,6 +29,22 @@ if [ -z "$APP_NAME" ]; then
   exit 1
 fi
 
+# Auto-cleaning images if DOCKER_DEPLOY_IMAGES_AUTOCLEAN is enabled
+if [ "$DOCKER_DEPLOY_IMAGES_AUTOCLEAN" = "1" ]; then
+  echo "Auto-cleaning old images..."
+
+  # Remove all unused images
+  docker image prune -a -f
+
+  echo "Removed unused images."
+fi
+
+# Pull the Docker image
+DOCKER_IMAGE_TAGGED="${DOCKER_IMAGE}:${IMAGE_TAG}"
+echo "Pulling Docker image: ${DOCKER_IMAGE_TAGGED}..."
+docker pull "${DOCKER_IMAGE_TAGGED}"
+echo "Docker image ${DOCKER_IMAGE_TAGGED} pulled successfully."
+
 # Auto-cleaning containers if DOCKER_DEPLOY_CONTAINERS_AUTOCLEAN is enabled
 if [ "$DOCKER_DEPLOY_CONTAINERS_AUTOCLEAN" = "1" ]; then
   echo "Auto-cleaning old containers..."
@@ -44,16 +60,6 @@ if [ "$DOCKER_DEPLOY_CONTAINERS_AUTOCLEAN" = "1" ]; then
   else
     echo "No exited containers to remove."
   fi
-fi
-
-# Auto-cleaning images if DOCKER_DEPLOY_IMAGES_AUTOCLEAN is enabled
-if [ "$DOCKER_DEPLOY_IMAGES_AUTOCLEAN" = "1" ]; then
-  echo "Auto-cleaning old images..."
-
-  # Remove all unused images
-  docker image prune -a -f
-
-  echo "Removed unused images."
 fi
 
 # Check if Docker is running in swarm mode
@@ -87,6 +93,6 @@ if [ -n "$APP_EXTERNAL_PORT" ]; then
     export APP_EXTERNAL_PORT
 fi
 
+# Deploy
 docker stack deploy --with-registry-auth -c "${SCRIPT_DIR}/docker-compose.yml" "${APP_NAME}"
-
 echo "Deployment complete."
