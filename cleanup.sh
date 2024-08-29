@@ -1,4 +1,5 @@
 #!/bin/bash
+# cleanup.sh is a script for manually cleaning up unused docker data
 
 # Exit immediately if a command exits with a non-zero status
 set -e

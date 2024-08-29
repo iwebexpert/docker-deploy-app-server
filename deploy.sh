@@ -29,6 +29,33 @@ if [ -z "$APP_NAME" ]; then
   exit 1
 fi
 
+# Auto-cleaning containers if DOCKER_DEPLOY_CONTAINERS_AUTOCLEAN is enabled
+if [ "$DOCKER_DEPLOY_CONTAINERS_AUTOCLEAN" = "1" ]; then
+  echo "Auto-cleaning old containers..."
+
+  # Find all exited containers related to the service
+  exited_containers=$(docker ps -a --filter "name=${APP_NAME}" --filter "status=exited" -q)
+
+  # Check if there are any exited containers to remove
+  if [ -n "$exited_containers" ]; then
+    # Remove all exited containers related to the service
+    docker rm $exited_containers
+    echo "Removed exited containers: $exited_containers"
+  else
+    echo "No exited containers to remove."
+  fi
+fi
+
+# Auto-cleaning images if DOCKER_DEPLOY_IMAGES_AUTOCLEAN is enabled
+if [ "$DOCKER_DEPLOY_IMAGES_AUTOCLEAN" = "1" ]; then
+  echo "Auto-cleaning old images..."
+
+  # Remove all unused images
+  docker image prune -a -f
+
+  echo "Removed unused images."
+fi
+
 # Check if Docker is running in swarm mode
 SWARM_STATUS=$(docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null || echo "inactive")
 
